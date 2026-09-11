@@ -1,0 +1,237 @@
+@import 'tailwindcss';
+
+/* 用 class 驱动深色主题：由 Rust 侧读到的系统主题决定是否加 .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --line: #e2e6ed;
+  --line-strong: #cdd4df;
+  --text: #1c2230;
+  --muted: #6b7480;
+  --accent: #2f6fed;
+  --accent-weak: #e8f0fe;
+  --warn-bg: #fff6e5;
+  --warn-line: #f0c98a;
+  --warn-text: #7a5310;
+  --danger: #c0392b;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #12161f;
+  --surface: #1b212c;
+  --surface-2: #222a37;
+  --line: #2c3442;
+  --line-strong: #3d4859;
+  --text: #e9edf5;
+  --muted: #97a1b1;
+  --accent: #5b93ff;
+  --accent-weak: #1e2b45;
+  --warn-bg: #2c2415;
+  --warn-line: #6b5628;
+  --warn-text: #e3c176;
+  --danger: #ef7d6f;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, 'Microsoft YaHei UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* 桌面应用：禁用文本选中与原生拖拽 */
+body {
+  user-select: none;
+  cursor: default;
+}
+
+input,
+select {
+  user-select: text;
+}
+
+/* ---------------------------------------------------------------- 组件类 */
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: var(--accent);
+}
+
+.btn-sm {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+
+.input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+
+/* 时间选择器的原生图标在深色下会看不见 */
+.dark input[type='time']::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.seg button {
+  height: 26px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.seg button[data-active='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-empty {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}

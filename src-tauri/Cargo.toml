@@ -1,0 +1,47 @@
+[package]
+name = "duoswitch"
+version = "0.1.0"
+description = "跟随时间自动切换 Windows 明暗主题与壁纸"
+authors = ["熊飞"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "duoswitch_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = ["tray-icon"] }
+tauri-plugin-dialog = "2.7.3"
+tauri-plugin-autostart = "2.5.1"
+tauri-plugin-single-instance = "2.4.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.151"
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std", "serde"] }
+winreg = "0.56.0"
+# 只开缩略图需要的解码器，控制编译时间
+image = { version = "0.25.10", default-features = false, features = [
+    "jpeg",
+    "png",
+    "bmp",
+    "webp",
+] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Shell",
+    "Win32_Graphics_Dwm",
+] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
