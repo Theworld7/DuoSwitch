@@ -1,6 +1,6 @@
 //! 配置模型与 JSON 持久化。
 //!
-//! 存放在 `%APPDATA%\com.xiongfei.duoswitch\config.json`，
+//! 存放在 `%APPDATA%\com.FinnXiong.duoswitch\config.json`，
 //! 与 Tauri 的 app_config_dir 约定一致，但独立计算，
 //! 便于 CLI 模式在未初始化 Tauri 的情况下也能读写。
 
@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use chrono::Weekday;
 use serde::{Deserialize, Serialize};
 
-pub const APP_DIR: &str = "com.xiongfei.duoswitch";
+pub const APP_DIR: &str = "com.FinnXiong.duoswitch";
 const FILE_NAME: &str = "config.json";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
