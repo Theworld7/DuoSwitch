@@ -237,13 +237,19 @@ export async function setLockScreen(enabled: boolean): Promise<void> {
     return
   }
 
-  await refreshLockHelper()
-  if (lockHelperReady.value !== true) {
-    await setupLockHelper()
-    return
+  // 整个流程（查询任务 + 必要时注册 + 写一次锁屏）都在开关上显示 loading
+  lockHelperPending.value = true
+  try {
+    await refreshLockHelper()
+    if (lockHelperReady.value !== true) {
+      await setupLockHelper()
+      return
+    }
+    // 只写锁屏，不动桌面 —— 用户可能还没点「立即应用」
+    await applyLockScreen()
+  } finally {
+    lockHelperPending.value = false
   }
-  // 只写锁屏，不动桌面 —— 用户可能还没点「立即应用」
-  await applyLockScreen()
 }
 
 /** 请求管理员权限注册助手任务，成功后立即写一次锁屏。 */

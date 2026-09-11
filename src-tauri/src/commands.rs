@@ -1,6 +1,10 @@
 //! 前端可调用的命令层。
 //!
 //! 约定：所有返回状态的命令统一回 `StateDto`，界面只认这一种结构。
+//!
+//! 执行上下文：涉及文件 IO / 子进程 / 图像解码的命令都标了 `(async)`。
+//! Tauri 默认的 blocking 上下文会在 UI 主线程执行命令，schtasks 调用与
+//! PNG 解码会让窗口短暂无响应；`(async)` 会改到线程池执行。
 
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -77,7 +81,7 @@ pub fn get_state(state: State<'_, AppState>) -> StateDto {
     state_dto(&guard)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn save_config(state: State<'_, AppState>, config: Config) -> Result<StateDto, String> {
     let mut next = config;
     let notes = next.sanitize();
@@ -109,7 +113,7 @@ pub fn save_config(state: State<'_, AppState>, config: Config) -> Result<StateDt
 ///
 /// 手动结果会被记为「已跟随」，因此不会被误判成外部冲突；
 /// 下一个调度跳变点到来时仍会按计划重新断言。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn apply_now(state: State<'_, AppState>, mode: Option<Mode>) -> Result<StateDto, String> {
     let dto = {
         let mut guard = lock(&state.shared);
@@ -167,7 +171,7 @@ pub fn open_color_settings() -> Result<(), String> {
 }
 
 /// 缩略图 data URL。文件不存在或解码失败时返回 null，界面显示占位。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn wallpaper_preview(path: String) -> Option<String> {
     crate::thumbnail::data_url(std::path::Path::new(&path))
 }
@@ -181,7 +185,7 @@ pub fn dismiss_conflict(state: State<'_, AppState>) -> StateDto {
 }
 
 /// 注册锁屏助手任务。未提权时拉起自身的管理员实例去注册（会弹一次 UAC）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn setup_lock_helper() -> Result<(), String> {
     if win32::is_elevated() {
         win32::install_lock_helper()
@@ -191,7 +195,7 @@ pub fn setup_lock_helper() -> Result<(), String> {
 }
 
 /// 助手任务是否已注册。按需查询，不放进 state_dto —— 那会每 15 秒起一次 schtasks。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn lock_helper_ready() -> bool {
     win32::lock_helper_registered()
 }
@@ -199,7 +203,7 @@ pub fn lock_helper_ready() -> bool {
 /// 撤销对锁屏壁纸的接管：先关配置开关，再删任务、清注册表。
 ///
 /// 顺序不能反 —— 开关还开着的话，下一次断言又会把锁屏写回去。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn clear_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String> {
     let (dto, snapshot) = {
         let mut guard = lock(&state.shared);
@@ -226,7 +230,7 @@ pub fn clear_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String>
 ///
 /// 开启「同时切换锁屏壁纸」时用它让锁屏立即生效。不能复用 `apply_now`——
 /// 那会连带把桌面主题与壁纸也换掉，而用户此时往往还没点「立即应用」。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn apply_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String> {
     let dto = {
         let mut guard = lock(&state.shared);
