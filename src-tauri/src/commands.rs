@@ -90,12 +90,27 @@ pub fn save_config(state: State<'_, AppState>, config: Config) -> Result<StateDt
 
     let dto = {
         let mut guard = lock(&state.shared);
+
+        // 只有壁纸路径变化才重新断言（让新图立刻生效）。其他配置的保存
+        // （时间点、锁屏开关、总开关…）不该顺手改一次桌面 —— 用户可能
+        // 还没点「立即应用」，开个锁屏开关就把壁纸换掉是没人要的行为。
+        let wallpaper_changed = guard.cfg.light_wallpaper != next.light_wallpaper
+            || guard.cfg.dark_wallpaper != next.dark_wallpaper;
+
         guard.cfg = next;
         guard.revision += 1;
-        // 清掉断言记录，让调度线程用新配置重新断言一次
-        guard.rt.applied = None;
-        guard.rt.applied_revision = None;
-        guard.rt.followed_wallpaper = None;
+
+        if wallpaper_changed {
+            // 清掉断言记录，让调度线程用新配置重新断言一次
+            guard.rt.applied = None;
+            guard.rt.applied_revision = None;
+            guard.rt.followed_wallpaper = None;
+        } else if guard.rt.applied.is_some() {
+            // 已断言过且壁纸未变：保持断言有效，只把版本号对齐，
+            // 免得被 decide 判成「配置变了要重断言」。
+            guard.rt.applied_revision = Some(guard.revision);
+        }
+
         guard.rt.conflict = None;
         guard.rt.notice = if notes.is_empty() {
             None
@@ -209,6 +224,10 @@ pub fn clear_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String>
         let mut guard = lock(&state.shared);
         guard.cfg.lock_screen = false;
         guard.revision += 1;
+        // 撤销锁屏接管不该顺手改桌面：壁纸未变时保持已有断言有效。
+        if guard.rt.applied.is_some() {
+            guard.rt.applied_revision = Some(guard.revision);
+        }
         guard.rt.last_error = None;
         (state_dto(&guard), guard.cfg.clone())
     };
