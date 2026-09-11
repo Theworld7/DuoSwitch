@@ -40,6 +40,11 @@ export async function clearLockScreen(): Promise<AppState> {
   return await invoke<AppState>('clear_lock_screen')
 }
 
+/** 只按当前系统主题写一次锁屏壁纸，不动桌面主题与壁纸。 */
+export async function applyLockScreen(): Promise<AppState> {
+  return await invoke<AppState>('apply_lock_screen')
+}
+
 /** 注册锁屏提权助手任务。未提权时会弹一次 UAC，之后切换锁屏不再需要授权。 */
 export async function setupLockHelper(): Promise<void> {
   await invoke('setup_lock_helper')

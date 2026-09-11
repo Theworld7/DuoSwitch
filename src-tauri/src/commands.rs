@@ -222,6 +222,43 @@ pub fn clear_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String>
     Ok(dto)
 }
 
+/// 只按当前系统主题写一次锁屏壁纸，不动桌面主题与壁纸。
+///
+/// 开启「同时切换锁屏壁纸」时用它让锁屏立即生效。不能复用 `apply_now`——
+/// 那会连带把桌面主题与壁纸也换掉，而用户此时往往还没点「立即应用」。
+#[tauri::command]
+pub fn apply_lock_screen(state: State<'_, AppState>) -> Result<StateDto, String> {
+    let dto = {
+        let mut guard = lock(&state.shared);
+        let cfg = guard.cfg.clone();
+        let mode = win32::current_theme();
+
+        let Some(wallpaper) = cfg.wallpaper_for(mode) else {
+            return Err(format!("{}模式未配置壁纸，锁屏未更新", mode.as_str()));
+        };
+
+        // 与 apply_mode 一致的权限策略：本进程提权就直写，否则交给助手任务静默完成
+        let outcome = if win32::is_elevated() {
+            win32::set_lock_screen(wallpaper)
+        } else {
+            win32::run_lock_helper()
+        };
+
+        match outcome {
+            Ok(()) => {
+                guard.rt.last_error = None;
+                state_dto(&guard)
+            }
+            Err(err) => {
+                guard.rt.last_error = Some(err.clone());
+                return Err(err);
+            }
+        }
+    };
+
+    Ok(dto)
+}
+
 /// 把当前主题与壁纸一次性对齐到系统现有主题（用于启动时同步自己窗口外观）。
 #[tauri::command]
 pub fn current_theme() -> Mode {

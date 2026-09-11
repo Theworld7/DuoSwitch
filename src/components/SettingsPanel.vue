@@ -6,6 +6,7 @@ import {
   busy,
   clearLockScreen,
   draft,
+  lockHelperPending,
   lockHelperReady,
   setAutostart,
   setLockScreen,
@@ -53,6 +54,7 @@ function onClearLockScreen(): void {
         :model-value="draft.lock_screen"
         label="同时切换锁屏壁纸"
         hint="锁屏壁纸存在系统目录下，写入需要管理员权限；接管期间 Windows 设置里可能显示「部分设置由你的组织管理」"
+        :loading="lockHelperPending"
         @update:model-value="onLockScreen"
       />
 

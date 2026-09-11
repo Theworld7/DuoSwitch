@@ -76,6 +76,7 @@ pub fn run() {
             commands::setup_lock_helper,
             commands::lock_helper_ready,
             commands::clear_lock_screen,
+            commands::apply_lock_screen,
             commands::current_theme,
             commands::builtin_wallpapers,
         ])

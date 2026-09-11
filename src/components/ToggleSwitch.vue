@@ -4,6 +4,8 @@ defineProps<{
   label: string
   hint?: string
   disabled?: boolean
+  /** 处理中：开关内显示转圈，且不可点击 */
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -25,18 +27,23 @@ const emit = defineEmits<{
       role="switch"
       :aria-checked="modelValue"
       :aria-label="label"
-      :disabled="disabled === true"
+      :aria-busy="loading === true"
+      :disabled="disabled === true || loading === true"
       :style="{
         width: '40px',
         height: '22px',
         background: modelValue ? 'var(--accent)' : 'var(--line-strong)',
-        opacity: disabled === true ? 0.5 : 1,
-        cursor: disabled === true ? 'not-allowed' : 'pointer',
+        opacity: disabled === true || loading === true ? 0.6 : 1,
+        cursor: disabled === true || loading === true ? 'not-allowed' : 'pointer',
       }"
       class="relative shrink-0 rounded-full border-0 p-0 transition-colors"
       @click="emit('update:modelValue', !modelValue)"
     >
+      <span v-if="loading === true" class="absolute inset-0 flex items-center justify-center">
+        <span class="size-[13px] animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      </span>
       <span
+        v-else
         class="absolute top-[2px] block size-[18px] rounded-full bg-white transition-all"
         :style="{ left: modelValue ? '20px' : '2px' }"
       />

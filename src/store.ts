@@ -38,6 +38,8 @@ export const previews = reactive<{ light: string | null; dark: string | null }>(
 export const lockHelperReady = ref<boolean | null>(null)
 /** 首次启动时后端把内置壁纸路径写进了配置，用来提示用户点「立即应用」 */
 export const firstRunSeeded = ref(false)
+/** 锁屏助手注册中（等 UAC / 轮询），用于开关上的 loading 提示 */
+export const lockHelperPending = ref(false)
 
 const MODES: Mode[] = ['light', 'dark']
 
@@ -132,10 +134,13 @@ async function refreshLockHelper(): Promise<void> {
 /**
  * 提权实例注册完任务才会被查出来，而用户可能在 UAC 弹窗上停留一会儿，
  * 所以这里轮询等待，最多 20 秒。
+ *
+ * 间隔取 500ms：比 1s 更快发现授权完成；又不至于把 schtasks 查询压得太密
+ * （每次查询会起一个进程）。
  */
 async function waitForLockHelper(): Promise<void> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
     await refreshLockHelper()
     if (lockHelperReady.value === true) {
       return
@@ -237,29 +242,39 @@ export async function setLockScreen(enabled: boolean): Promise<void> {
     await setupLockHelper()
     return
   }
-  await applyNow()
+  // 只写锁屏，不动桌面 —— 用户可能还没点「立即应用」
+  await applyLockScreen()
 }
 
 /** 请求管理员权限注册助手任务，成功后立即写一次锁屏。 */
 export async function setupLockHelper(): Promise<void> {
   busy.value = true
+  lockHelperPending.value = true
   try {
     await api.setupLockHelper()
+    message.value = '已请求管理员权限，请在弹窗中允许授权'
+    await waitForLockHelper()
+
+    if (lockHelperReady.value === true) {
+      message.value = '锁屏助手任务已注册，之后切换锁屏不再需要授权'
+      await applyLockScreen()
+    } else {
+      message.value = '未检测到锁屏助手任务；授权未通过时锁屏壁纸不会跟随'
+    }
   } catch (error) {
     message.value = describeError(error)
-    return
   } finally {
+    lockHelperPending.value = false
     busy.value = false
   }
+}
 
-  message.value = '已请求管理员权限，请在弹窗中允许授权'
-  await waitForLockHelper()
-
-  if (lockHelperReady.value === true) {
-    message.value = '锁屏助手任务已注册，之后切换锁屏不再需要授权'
-    await applyNow()
-  } else {
-    message.value = '未检测到锁屏助手任务；授权未通过时锁屏壁纸不会跟随'
+/** 只写一次锁屏壁纸（按当前系统主题），不惊动桌面。 */
+export async function applyLockScreen(): Promise<void> {
+  try {
+    applyState(await api.applyLockScreen())
+  } catch (error) {
+    message.value = describeError(error)
   }
 }
 
