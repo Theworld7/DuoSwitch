@@ -82,17 +82,27 @@ pub fn run() {
         .setup(move |app| {
             let handle = app.handle().clone();
 
-            // 首次启动时把内置壁纸写入配置（不 apply，避免装上就偷偷换桌面）。
+            // 首次启动时把内置壁纸写入配置，并跳过调度器的首次主动断言，
+            // 避免装好一启动就偷偷换掉用户桌面 —— 用户点「立即应用」才生效。
             // AppHandle + shared 在这里都 ready，唯一一次检测。
             if commands::seed_builtin_wallpapers_if_first_run(
                 &handle,
                 &worker,
                 &config_dir,
             ) {
-                handle.emit(
-                    "first-run-seeded",
-                    (),
-                ).ok();
+                {
+                    let mut guard = commands::lock(&worker);
+                    // 把当前时段槽记为「已处理」，并让调度器认为壁纸已跟随当前系统主题，
+                    // 这样第一次 tick 会判定为 Idle，不会 set_theme / set_wallpaper。
+                    // 之后照常运行：下个切换点到来、或用户手动应用时才动桌面。
+                    let slot = scheduler::current_transition(&guard.cfg, Local::now());
+                    guard.rt.followed_wallpaper = Some(win32::current_theme());
+                    if let Some(slot) = slot {
+                        guard.rt.applied = Some(slot);
+                        guard.rt.applied_revision = Some(guard.revision);
+                    }
+                }
+                handle.emit("first-run-seeded", ()).ok();
             }
 
             let kick = {
