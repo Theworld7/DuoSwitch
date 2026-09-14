@@ -63,7 +63,7 @@ DuoSwitch 把这件事补上：按你设定的时间（或日出日落）一起�
 
 ## 安装
 
-从 [Releases](../../releases) 下载最新的 `DuoSwitch_0.1.0_x64-setup.exe`，
+从 [Releases](../../releases) 下载最新的 `DuoSwitch_0.1.1_x64-setup.exe`，
 双击安装即可，不需要管理员权限。
 
 - 安装位置：`%LOCALAPPDATA%\DuoSwitch\`

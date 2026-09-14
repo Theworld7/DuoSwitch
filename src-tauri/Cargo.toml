@@ -1,6 +1,6 @@
 [package]
 name = "duoswitch"
-version = "0.1.0"
+version = "0.1.1"
 description = "跟随时间自动切换 Windows 明暗主题与壁纸"
 authors = ["熊飞"]
 edition = "2021"
